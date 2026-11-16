@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffd6e0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Öltöztesd fel!</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👕</text></svg>">
+<style>
+  :root{
+    --bg1:#ffe3ec; --bg2:#e3f0ff; --ink:#3a2b3f; --accent:#ff5c8a; --panel:#ffffffee;
+    --chip:#f4eef7; --chip-on:#ff5c8a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{
+    font-family:"Trebuchet MS",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(170deg,var(--bg1),var(--bg2));
+    display:flex;flex-direction:column;height:100dvh;
+    touch-action:manipulation;user-select:none;-webkit-user-select:none;
+    padding-top:env(safe-area-inset-top);
+  }
+  header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0}
+  h1{font-size:1.35rem;margin:0;letter-spacing:.5px}
+  h1 span{color:var(--accent)}
+  .btns{display:flex;gap:6px}
+  .btns button{
+    border:0;border-radius:14px;padding:8px 10px;font-size:1.05rem;background:#fff;
+    box-shadow:0 2px 6px #0001;cursor:pointer;
+  }
+  .btns button:active{transform:scale(.92)}
+
+  #stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+  #stage::after{ /* floor shadow */
+    content:"";position:absolute;bottom:4%;left:50%;width:46%;height:5%;transform:translateX(-50%);
+    background:radial-gradient(#0002,transparent 70%);border-radius:50%;z-index:0;
+  }
+  #hero{height:100%;max-width:100%;position:relative;z-index:1;cursor:pointer;overflow:visible}
+  #hero .bob{transform-origin:150px 470px;animation:idle 3s ease-in-out infinite}
+  #hero.tap .bob{animation:boing .35s ease}
+  @keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes boing{0%{transform:scale(1,1)}35%{transform:scale(1.07,.92)}70%{transform:scale(.96,1.05)}100%{transform:scale(1,1)}}
+  .pop{animation:pop .3s ease}
+  @keyframes pop{0%{opacity:.2;transform:scale(.85)}100%{opacity:1;transform:scale(1)}}
+
+  #panel{
+    background:var(--panel);border-radius:24px 24px 0 0;box-shadow:0 -4px 20px #0001;
+    padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  }
+  #tabs,#items{display:flex;gap:8px;overflow-x:auto;padding:0 12px;scrollbar-width:none}
+  #tabs::-webkit-scrollbar,#items::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto;border:0;border-radius:999px;padding:8px 14px;font-size:.95rem;font-weight:700;
+    background:var(--chip);color:var(--ink);cursor:pointer;font-family:inherit;
+  }
+  .tab.on{background:var(--chip-on);color:#fff}
+  #items{margin-top:10px;padding-bottom:2px}
+  .item{
+    flex:0 0 auto;width:86px;border:3px solid transparent;border-radius:18px;background:#fff;
+    box-shadow:0 2px 8px #0000000f;padding:4px 4px 6px;cursor:pointer;font-family:inherit;color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .item.on{border-color:var(--accent)}
+  .item:active{transform:scale(.94)}
+  .item svg{width:72px;height:66px}
+  .item span{font-size:.72rem;line-height:1.1;text-align:center;min-height:2.2em;display:flex;align-items:center}
+  .none{font-size:2rem;width:72px;height:66px;display:flex;align-items:center;justify-content:center;opacity:.5}
+
+  /* Easter egg */
+  #love{
+    position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;
+    background:radial-gradient(circle,#ff8fb1ee,#ff4f7ff2);color:#fff;text-align:center;overflow:hidden;
+  }
+  #love.show{display:flex;animation:fadein .4s ease}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  #love .big{font-size:clamp(3rem,16vw,6rem);font-weight:900;text-shadow:0 4px 0 #c22a5a,0 8px 24px #0003;animation:beat 1s ease-in-out infinite}
+  #love .heart{font-size:clamp(5rem,30vw,10rem);animation:beat 1s ease-in-out infinite;line-height:1}
+  #love small{margin-top:28px;opacity:.85;font-size:.95rem}
+  @keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.15)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+  .fh{position:absolute;bottom:-60px;animation:float linear forwards;pointer-events:none}
+  @keyframes float{to{transform:translateY(-120vh) rotate(25deg);opacity:0}}
+
+  #toast{
+    position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#3a2b3f;color:#fff;
+    padding:8px 14px;border-radius:12px;font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40
+  }
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Öltöztesd <span>fel!</span></h1>
+  <div class="btns">
+    <button id="btnRandom" title="Véletlen szett" aria-label="Véletlen szett">🎲</button>
+    <button id="btnReset" title="Eredeti szett" aria-label="Eredeti szett">↺</button>
+    <button id="btnSave" title="Kép mentése" aria-label="Kép mentése">📸</button>
+  </div>
+</header>
+
+<div id="stage">
+  <svg id="hero" viewBox="0 -12 300 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Karakter">
+    <defs>
+      <pattern id="stripes" width="14" height="14" patternUnits="userSpaceOnUse">
+        <rect width="14" height="14" fill="#fff"/><rect width="14" height="7" fill="#24407a"/>
+      </pattern>
+      <pattern id="hawaii" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" fill="#1fa99a"/>
+        <g fill="#ffd34d"><circle cx="10" cy="10" r="4"/><circle cx="16" cy="10" r="4"/><circle cx="13" cy="5" r="4"/><circle cx="13" cy="15" r="4"/></g>
+        <circle cx="13" cy="10" r="2.5" fill="#ff7a59"/>
+        <g fill="#ff6fa0"><circle cx="30" cy="28" r="4"/><circle cx="36" cy="28" r="4"/><circle cx="33" cy="23" r="4"/><circle cx="33" cy="33" r="4"/></g>
+        <circle cx="33" cy="28" r="2.5" fill="#fff4b0"/>
+        <path d="M2 30 q6 -8 12 0 q-6 4 -12 0z M24 6 q6 -8 12 0 q-6 4 -12 0z" fill="#0f7a6d"/>
+      </pattern>
+      <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse">
+        <rect width="16" height="16" fill="#8f6bff"/><circle cx="8" cy="8" r="3" fill="#ffe14d"/>
+      </pattern>
+      <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe680"/><stop offset="1" stop-color="#e0a800"/>
+      </linearGradient>
+    </defs>
+    <g class="bob"><g id="layers"></g></g>
+  </svg>
+</div>
+
+<div id="panel">
+  <div id="tabs"></div>
+  <div id="items"></div>
+</div>
+
+<div id="love" aria-live="polite">
+  <div class="heart">❤️</div>
+  <div class="big">Szeretlek!</div>
+  <small>(koppints a bezáráshoz)</small>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ---------- Színek ---------- */
+const SKIN = "#f3c6a5", SKIN_D = "#e2a582", HAIR = "#3a281d", HAIR_L = "#5a4130";
+const OUT = 'stroke="#2b1d22" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+
+/* Kar útvonalak (váll -> csukló) */
+const ARM_L = "M104 250 Q86 292 82 334";
+const ARM_R = "M196 250 Q214 292 218 334";
+const ARM_L_SHORT = "M104 250 Q94 272 90 292";
+const ARM_R_SHORT = "M196 250 Q206 272 210 292";
+const TORSO = "M94 238 Q150 214 206 238 Q218 300 210 354 L90 354 Q82 300 94 238 Z";
+
+const sleeves = (col, short, w=34) => {
+  const L = short ? ARM_L_SHORT : ARM_L, R = short ? ARM_R_SHORT : ARM_R;
+  return `<path d="${L}" stroke="#2b1d22" stroke-width="${w+6}" stroke-linecap="round" fill="none"/>
+          <path d="${R}" stroke="#2b1d22" stroke-width="${w+6}" stroke-linecap="round" fill="none"/>
+          <path d="${L}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>
+          <path d="${R}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
+};
+
+/* ---------- Alap test ---------- */
+function bodyBase(){
+  return `
+  <!-- lábak -->
+  <rect x="110" y="340" width="36" height="112" rx="16" fill="${SKIN}" ${OUT}/>
+  <rect x="154" y="340" width="36" height="112" rx="16" fill="${SKIN}" ${OUT}/>
+  <ellipse cx="124" cy="456" rx="20" ry="9" fill="${SKIN}" ${OUT}/>
+  <ellipse cx="176" cy="456" rx="20" ry="9" fill="${SKIN}" ${OUT}/>
+  <!-- alsó -->
+  <path d="M100 330 L200 330 L202 382 L154 382 L150 366 L146 382 L98 382 Z" fill="#5b7fc0" ${OUT}/>
+  <g fill="#ff6f91"><path d="M120 352 c-4-6 -12 0 0 8 c12-8 4-14 0-8z"/><path d="M178 358 c-4-6 -12 0 0 8 c12-8 4-14 0-8z"/></g>`;
+}
+function torsoBase(){
+  return `
+  <rect x="135" y="192" width="30" height="46" fill="${SKIN}" ${OUT}/>
+  <path d="${TORSO}" fill="${SKIN}" ${OUT}/>
+  <path d="${ARM_L}" stroke="#2b1d22" stroke-width="32" stroke-linecap="round" fill="none"/>
+  <path d="${ARM_R}" stroke="#2b1d22" stroke-width="32" stroke-linecap="round" fill="none"/>
+  <path d="${ARM_L}" stroke="${SKIN}" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="${ARM_R}" stroke="${SKIN}" stroke-width="26" stroke-linecap="round" fill="none"/>`;
+}
+function hands(){
+  return `<circle cx="81" cy="342" r="15" fill="${SKIN}" ${OUT}/>
+          <circle cx="219" cy="342" r="15" fill="${SKIN}" ${OUT}/>`;
+}
+function head(){
+  return `
+  <!-- fülek -->
+  <ellipse cx="80" cy="142" rx="13" ry="18" fill="${SKIN}" ${OUT}/>
+  <ellipse cx="220" cy="142" rx="13" ry="18" fill="${SKIN}" ${OUT}/>
+  <path d="M78 134 q6 8 0 16 M222 134 q-6 8 0 16" stroke="${SKIN_D}" stroke-width="3" fill="none"/>
+  <!-- arc (kerek, telt arc) -->
+  <path d="M80 130 Q80 58 150 56 Q220 58 220 130 Q222 190 196 206 Q174 220 150 220 Q126 220 104 206 Q78 190 80 130 Z" fill="${SKIN}" ${OUT}/>
+  <!-- borosta -->
+  <path d="M86 156 Q92 210 150 216 Q208 210 214 156 Q204 196 150 200 Q96 196 86 156 Z" fill="#5a3b2b" opacity=".16"/>
+  <path d="M120 168 Q150 158 180 168 Q150 164 120 168 Z" fill="#5a3b2b" opacity=".18"/>
+  <!-- pirospozsgás arc -->
+  <ellipse cx="104" cy="164" rx="15" ry="9" fill="#ff7f7f" opacity=".38"/>
+  <ellipse cx="196" cy="164" rx="15" ry="9" fill="#ff7f7f" opacity=".38"/>
+  <!-- szemöldök -->
+  <path d="M104 112 Q120 102 138 110" stroke="${HAIR}" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M162 110 Q180 102 196 112" stroke="${HAIR}" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- szemek (mosolygós, kissé hunyorgó, kékes-szürke) -->
+  <ellipse cx="121" cy="132" rx="12" ry="9" fill="#fff" ${OUT}/>
+  <ellipse cx="179" cy="132" rx="12" ry="9" fill="#fff" ${OUT}/>
+  <circle cx="122" cy="132" r="6.5" fill="#7d98ad"/><circle cx="180" cy="132" r="6.5" fill="#7d98ad"/>
+  <circle cx="122" cy="132" r="3.2" fill="#1d1d1d"/><circle cx="180" cy="132" r="3.2" fill="#1d1d1d"/>
+  <circle cx="124.5" cy="129.5" r="1.8" fill="#fff"/><circle cx="182.5" cy="129.5" r="1.8" fill="#fff"/>
+  <path d="M108 139 Q121 146 134 139 M166 139 Q179 146 192 139" stroke="${SKIN_D}" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- orr -->
+  <path d="M148 136 Q140 158 146 162 Q152 167 160 160" stroke="${SKIN_D}" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- nagy vigyor -->
+  <path d="M108 172 Q150 214 192 172 Q150 184 108 172 Z" fill="#7a2531" ${OUT}/>
+  <path d="M114 175 Q150 186 186 175 L183 183 Q150 192 117 183 Z" fill="#fff"/>
+  <path d="M132 196 Q150 204 168 196 Q150 192 132 196 Z" fill="#e35d6a"/>
+  <path d="M104 170 q4 6 0 10 M196 170 q-4 6 0 10" stroke="${SKIN_D}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+}
+function hair(){
+  return `
+  <!-- oldalt rövidre nyírt (fade) -->
+  <path d="M82 138 Q78 104 92 86 L104 104 Q92 116 90 140 Z" fill="${HAIR}" opacity=".55"/>
+  <path d="M218 138 Q222 104 208 86 L196 104 Q208 116 210 140 Z" fill="${HAIR}" opacity=".55"/>
+  <!-- tető -->
+  <path d="M84 112 Q78 66 112 50 Q140 36 170 42 Q206 46 218 80 Q222 96 216 114
+           Q210 94 196 90 Q190 98 178 94 Q170 102 158 96 Q148 104 136 96 Q124 104 114 96 Q102 104 96 96 Q88 102 84 112 Z"
+        fill="${HAIR}" ${OUT}/>
+  <!-- felfelé fésült frufru / tincsek -->
+  <path d="M104 70 Q130 40 168 46 Q150 52 140 62 Q126 58 104 70 Z" fill="${HAIR_L}"/>
+  <path d="M150 58 Q178 44 204 66 Q182 60 166 66 Z" fill="${HAIR_L}"/>`;
+}
+
+/* ---------- Ruhák ---------- */
+const C = {
+  hat:{label:"Sapka", view:"55 -12 190 160", items:[
+    {id:"none", name:"Semmi"},
+    {id:"cap", name:"Baseball sapka", svg:`
+      <path d="M80 112 Q78 40 150 36 Q222 40 220 112 Z" fill="#e8434b" ${OUT}/>
+      <path d="M150 36 L150 104" stroke="#b52d35" stroke-width="3"/>
+      <circle cx="150" cy="38" r="5" fill="#b52d35"/>
+      <path d="M76 108 Q150 92 224 108 Q244 122 228 130 Q150 112 72 130 Q58 122 76 108 Z" fill="#c22f38" ${OUT}/>`},
+    {id:"beanie", name:"Kötött sapka", svg:`
+      <path d="M78 112 Q74 36 150 32 Q226 36 222 112 Z" fill="#ffb347" ${OUT}/>
+      <g stroke="#e89530" stroke-width="3">${[100,120,140,160,180,200].map(x=>`<path d="M${x} 50 L${x} 98"/>`).join("")}</g>
+      <rect x="72" y="94" width="156" height="26" rx="12" fill="#f28c28" ${OUT}/>
+      <circle cx="150" cy="26" r="17" fill="#fff6e0" ${OUT}/>`},
+    {id:"crown", name:"Korona", svg:`
+      <path d="M96 96 L94 44 L122 68 L150 30 L178 68 L206 44 L204 96 Z" fill="url(#gold)" ${OUT}/>
+      <circle cx="150" cy="78" r="7" fill="#e8434b" stroke="#2b1d22" stroke-width="2"/>
+      <circle cx="120" cy="82" r="5" fill="#3fa9f5" stroke="#2b1d22" stroke-width="2"/>
+      <circle cx="180" cy="82" r="5" fill="#3fc77a" stroke="#2b1d22" stroke-width="2"/>
+      <circle cx="94" cy="42" r="5" fill="url(#gold)" ${OUT}/><circle cx="150" cy="28" r="5" fill="url(#gold)" ${OUT}/><circle cx="206" cy="42" r="5" fill="url(#gold)" ${OUT}/>`},
+    {id:"party", name:"Buli sapka", svg:`
+      <path d="M108 84 L150 -2 L192 84 Z" fill="url(#dots)" ${OUT}/>
+      <path d="M106 84 Q150 96 194 84" stroke="#ff5c8a" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <circle cx="150" cy="-4" r="10" fill="#ff5c8a" ${OUT}/>`},
+    {id:"cowboy", name:"Cowboy kalap", svg:`
+      <path d="M104 98 Q98 30 132 36 Q150 48 168 36 Q202 30 196 98 Z" fill="#a8703f" ${OUT}/>
+      <path d="M104 86 Q150 96 196 86 L197 98 Q150 108 103 98 Z" fill="#5c3a1e"/>
+      <path d="M40 98 Q60 120 150 118 Q240 120 260 98 Q262 88 246 96 Q150 112 54 96 Q38 88 40 98 Z" fill="#8f5c30" ${OUT}/>`},
+  ]},
+  glasses:{label:"Szemüveg", view:"70 90 160 80", items:[
+    {id:"none", name:"Semmi"},
+    {id:"sun", name:"Pink napszemüveg", svg:`
+      <path d="M80 128 L100 126 M220 128 L200 126" stroke="#2b1d22" stroke-width="4"/>
+      <circle cx="121" cy="132" r="20" fill="#ff9fc0" fill-opacity=".85" stroke="#2b1d22" stroke-width="4"/>
+      <circle cx="179" cy="132" r="20" fill="#ff9fc0" fill-opacity=".85" stroke="#2b1d22" stroke-width="4"/>
+      <path d="M141 130 Q150 124 159 130" stroke="#2b1d22" stroke-width="4" fill="none"/>
+      <path d="M110 124 l8 -6 M168 124 l8 -6" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`},
+    {id:"heart", name:"Szív szemüveg", svg:`
+      <path d="M80 128 L98 126 M220 128 L202 126" stroke="#2b1d22" stroke-width="4"/>
+      <path d="M121 152 C92 132 100 108 121 122 C142 108 150 132 121 152 Z" fill="#ff3b6b" stroke="#2b1d22" stroke-width="3.5"/>
+      <path d="M179 152 C150 132 158 108 179 122 C200 108 208 132 179 152 Z" fill="#ff3b6b" stroke="#2b1d22" stroke-width="3.5"/>
+      <path d="M140 128 Q150 122 160 128" stroke="#2b1d22" stroke-width="4" fill="none"/>`},
+    {id:"nerd", name:"Okos szemüveg", svg:`
+      <path d="M80 128 L102 128 M220 128 L198 128" stroke="#2b1d22" stroke-width="4"/>
+      <rect x="100" y="116" width="42" height="32" rx="10" fill="#bfe3ff" fill-opacity=".25" stroke="#2b1d22" stroke-width="5"/>
+      <rect x="158" y="116" width="42" height="32" rx="10" fill="#bfe3ff" fill-opacity=".25" stroke="#2b1d22" stroke-width="5"/>
+      <path d="M142 128 Q150 122 158 128" stroke="#2b1d22" stroke-width="5" fill="none"/>`},
+  ]},
+  top:{label:"Felső", view:"55 190 190 180", items:[
+    {id:"tee", name:"Szürke póló", svg: sleeves("#dfe7e5", true) + `
+      <path d="${TORSO}" fill="#dfe7e5" ${OUT}/>
+      <g stroke="#c7d1cf" stroke-width="2">${[256,272,288,304,320,336].map(y=>`<path d="M96 ${y} L204 ${y}"/>`).join("")}</g>
+      <path d="M130 228 Q150 246 170 228" stroke="#2b1d22" stroke-width="3" fill="#cbd6d3"/>`},
+    {id:"hoodie", name:"Piros kapucnis", svg: sleeves("#e14b4b", false) + `
+      <path d="${TORSO}" fill="#e14b4b" ${OUT}/>
+      <path d="M118 300 L182 300 L190 340 L110 340 Z" fill="#c63a3a" ${OUT}/>
+      <path d="M116 230 Q150 262 184 230 Q150 244 116 230 Z" fill="#c63a3a" ${OUT}/>
+      <path d="M140 244 L138 280 M160 244 L162 280" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <path d="M82 324 L82 334 M218 324 L218 334" stroke="#c63a3a" stroke-width="30"/>`},
+    {id:"hawaii", name:"Hawaii ing", svg: sleeves("url(#hawaii)", true) + `
+      <path d="${TORSO}" fill="url(#hawaii)" ${OUT}/>
+      <path d="M150 238 L150 354" stroke="#0f7a6d" stroke-width="3"/>
+      <g fill="#fff">${[262,288,314,340].map(y=>`<circle cx="156" cy="${y}" r="3"/>`).join("")}</g>
+      <path d="M126 226 L150 262 L136 270 L118 236 Z M174 226 L150 262 L164 270 L182 236 Z" fill="#1fa99a" ${OUT}/>`},
+    {id:"stripes", name:"Csíkos póló", svg: sleeves("url(#stripes)", true) + `
+      <path d="${TORSO}" fill="url(#stripes)" ${OUT}/>
+      <path d="M130 228 Q150 246 170 228" stroke="#2b1d22" stroke-width="3" fill="#fff"/>`},
+    {id:"shirt", name:"Ing + csokor", svg: sleeves("#ffffff", false) + `
+      <path d="${TORSO}" fill="#fff" ${OUT}/>
+      <path d="M150 240 L150 354" stroke="#c9c9c9" stroke-width="2"/>
+      <g fill="#bbb">${[270,296,322].map(y=>`<circle cx="150" cy="${y}" r="3"/>`).join("")}</g>
+      <path d="M128 226 L150 244 L172 226 L176 240 L150 250 L124 240 Z" fill="#fff" ${OUT}/>
+      <path d="M150 248 L128 236 L128 262 Z M150 248 L172 236 L172 262 Z" fill="#d61f45" ${OUT}/>
+      <circle cx="150" cy="249" r="6" fill="#b5153a" ${OUT}/>
+      <path d="M82 320 L82 332 M218 320 L218 332" stroke="#eee" stroke-width="30"/>`},
+    {id:"love", name:"Szíves pulcsi", svg: sleeves("#ffb3c9", false) + `
+      <path d="${TORSO}" fill="#ffb3c9" ${OUT}/>
+      <path d="M150 326 C108 298 118 260 150 282 C182 260 192 298 150 326 Z" fill="#ff3b6b" ${OUT}/>
+      <path d="M128 228 Q150 246 172 228" stroke="#2b1d22" stroke-width="3" fill="#ff9ab7"/>
+      <path d="M92 346 L208 346" stroke="#ff9ab7" stroke-width="10"/>`},
+  ]},
+  jacket:{label:"Kabát", view:"45 180 210 200", items:[
+    {id:"none", name:"Semmi"},
+    {id:"puffer", name:"Fekete pufi kabát", svg:`
+      <ellipse cx="150" cy="226" rx="56" ry="20" fill="#161618" ${OUT}/>
+      ${sleeves("#1e1e21", false, 42)}
+      <g stroke="#3a3a3f" stroke-width="2" fill="none">
+        <path d="M100 268 Q92 270 88 266 M200 268 Q208 270 212 266"/>
+        <path d="M94 300 Q86 302 82 298 M206 300 Q214 302 218 298"/>
+      </g>
+      <path d="M86 236 Q116 222 138 232 L134 362 Q108 366 82 360 Q74 300 86 236 Z" fill="#1e1e21" ${OUT}/>
+      <path d="M214 236 Q184 222 162 232 L166 362 Q192 366 218 360 Q226 300 214 236 Z" fill="#1e1e21" ${OUT}/>
+      <g stroke="#3a3a3f" stroke-width="2.5" fill="none">
+        <path d="M84 272 Q110 280 136 272"/><path d="M80 306 Q108 314 135 306"/><path d="M80 338 Q108 346 134 338"/>
+        <path d="M216 272 Q190 280 164 272"/><path d="M220 306 Q192 314 165 306"/><path d="M220 338 Q192 346 166 338"/>
+      </g>
+      <path d="M98 262 q6 -8 12 0 q6 8 12 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M78 324 L78 334 M222 324 L222 334" stroke="#121214" stroke-width="40"/>`},
+    {id:"denim", name:"Farmerdzseki", svg:`
+      ${sleeves("#5b84bd", false, 38)}
+      <path d="M88 236 Q116 224 138 232 L136 358 L86 358 Q78 300 88 236 Z" fill="#5b84bd" ${OUT}/>
+      <path d="M212 236 Q184 224 162 232 L164 358 L214 358 Q222 300 212 236 Z" fill="#5b84bd" ${OUT}/>
+      <path d="M112 232 L138 232 L132 262 Z M188 232 L162 232 L168 262 Z" fill="#4a71a8" ${OUT}/>
+      <rect x="98" y="276" width="28" height="22" rx="3" fill="#4a71a8" ${OUT}/>
+      <rect x="174" y="276" width="28" height="22" rx="3" fill="#4a71a8" ${OUT}/>
+      <g stroke="#f2c14e" stroke-width="2" stroke-dasharray="4 3" fill="none">
+        <path d="M88 342 L134 342 M166 342 L212 342"/></g>
+      <g fill="#d9a53a"><circle cx="130" cy="290" r="3"/><circle cx="130" cy="320" r="3"/></g>`},
+    {id:"suit", name:"Öltöny zakó", svg:`
+      ${sleeves("#2c3e66", false, 36)}
+      <path d="M88 236 Q116 224 140 232 L140 362 L86 362 Q78 300 88 236 Z" fill="#2c3e66" ${OUT}/>
+      <path d="M212 236 Q184 224 160 232 L160 362 L214 362 Q222 300 212 236 Z" fill="#2c3e66" ${OUT}/>
+      <path d="M126 228 L148 300 L118 262 L128 256 Z M174 228 L152 300 L182 262 L172 256 Z" fill="#22314f" ${OUT}/>
+      <path d="M176 272 l4 -10 l4 10 z" fill="#ff5c8a"/>
+      <g fill="#111"><circle cx="146" cy="318" r="3.5"/><circle cx="146" cy="338" r="3.5"/></g>`},
+    {id:"leather", name:"Bőrdzseki", svg:`
+      ${sleeves("#3b2a24", false, 38)}
+      <path d="M88 236 Q116 224 140 230 L138 356 L88 356 Q80 300 88 236 Z" fill="#3b2a24" ${OUT}/>
+      <path d="M212 236 Q184 224 160 230 L162 356 L212 356 Q220 300 212 236 Z" fill="#3b2a24" ${OUT}/>
+      <path d="M116 228 L140 232 L120 274 L106 248 Z M184 228 L160 232 L180 274 L194 248 Z" fill="#2a1d19" ${OUT}/>
+      <path d="M138 260 L134 352" stroke="#c0c0c0" stroke-width="3"/>
+      <path d="M100 300 L124 300" stroke="#c0c0c0" stroke-width="2.5"/>
+      <path d="M96 248 Q104 244 112 250" stroke="#6b5148" stroke-width="2" fill="none"/>`},
+  ]},
+  pants:{label:"Nadrág", view:"80 320 140 145", items:[
+    {id:"cargo", name:"Fekete cargo", svg:`
+      <path d="M98 332 L202 332 L200 446 L156 446 L150 382 L144 446 L100 446 Z" fill="#232326" ${OUT}/>
+      <path d="M98 346 L202 346" stroke="#3a3a3f" stroke-width="3"/>
+      <rect x="100" y="380" width="22" height="28" rx="3" fill="#2d2d31" ${OUT}/>
+      <rect x="178" y="380" width="22" height="28" rx="3" fill="#2d2d31" ${OUT}/>
+      <path d="M100 388 L122 388 M178 388 L200 388" stroke="#3a3a3f" stroke-width="2"/>
+      <path d="M100 436 L144 436 M156 436 L200 436" stroke="#3a3a3f" stroke-width="2"/>`},
+    {id:"jeans", name:"Farmer", svg:`
+      <path d="M98 332 L202 332 L200 446 L156 446 L150 382 L144 446 L100 446 Z" fill="#4f78b0" ${OUT}/>
+      <path d="M98 346 L202 346" stroke="#3e6497" stroke-width="3"/>
+      <g stroke="#f2c14e" stroke-width="2" stroke-dasharray="4 3" fill="none">
+        <path d="M106 350 Q116 366 132 350 M194 350 Q184 366 168 350 M150 350 L150 378"/></g>
+      <circle cx="150" cy="340" r="3.5" fill="#d9a53a"/>`},
+    {id:"shorts", name:"Rövidnadrág", svg:`
+      <path d="M98 332 L202 332 L204 398 L156 398 L150 374 L144 398 L96 398 Z" fill="#f0b73a" ${OUT}/>
+      <path d="M98 346 L202 346" stroke="#d99a1e" stroke-width="3"/>
+      <g fill="#fff" opacity=".8"><circle cx="118" cy="370" r="4"/><circle cx="182" cy="368" r="4"/><circle cx="130" cy="388" r="3"/><circle cx="172" cy="388" r="3"/></g>`},
+    {id:"suitp", name:"Elegáns nadrág", svg:`
+      <path d="M98 332 L202 332 L200 446 L156 446 L150 382 L144 446 L100 446 Z" fill="#2c3e66" ${OUT}/>
+      <path d="M98 346 L202 346" stroke="#22314f" stroke-width="3"/>
+      <path d="M122 360 L122 444 M178 360 L178 444" stroke="#22314f" stroke-width="2"/>`},
+    {id:"track", name:"Melegítő", svg:`
+      <path d="M98 332 L202 332 L200 446 L156 446 L150 382 L144 446 L100 446 Z" fill="#7a7f8c" ${OUT}/>
+      <path d="M98 346 L202 346" stroke="#5f6370" stroke-width="5"/>
+      <path d="M102 352 L104 444 M198 352 L196 444" stroke="#fff" stroke-width="5"/>
+      <path d="M100 436 L144 436 M156 436 L200 436" stroke="#5f6370" stroke-width="4"/>`},
+  ]},
+  shoes:{label:"Cipő", view:"85 410 130 70", items:[
+    {id:"sneaker", name:"Fekete sneaker", svg: shoes("#202022","#f3f3f3", `<path d="M108 458 Q120 450 136 456 M164 456 Q180 450 192 458" stroke="#fff" stroke-width="3" fill="none"/>`)},
+    {id:"red", name:"Piros sneaker", svg: shoes("#e8434b","#fff", `<path d="M108 458 Q120 450 136 456 M164 456 Q180 450 192 458" stroke="#fff" stroke-width="3" fill="none"/>`)},
+    {id:"boots", name:"Bakancs", svg:`
+      <path d="M104 420 L146 420 L148 462 Q148 474 136 474 L98 474 Q90 474 92 464 Q96 452 104 448 Z" fill="#7a4b26" ${OUT}/>
+      <path d="M196 420 L154 420 L152 462 Q152 474 164 474 L202 474 Q210 474 208 464 Q204 452 196 448 Z" fill="#7a4b26" ${OUT}/>
+      <path d="M94 468 L148 468 M152 468 L206 468" stroke="#3b2414" stroke-width="7"/>
+      <g stroke="#f2d7a0" stroke-width="2"><path d="M114 430 L136 430 M114 440 L136 440 M164 430 L186 430 M164 440 L186 440"/></g>`},
+    {id:"flip", name:"Papucs", svg:`
+      <ellipse cx="124" cy="462" rx="24" ry="8" fill="#3fc7d6" ${OUT}/>
+      <ellipse cx="176" cy="462" rx="24" ry="8" fill="#3fc7d6" ${OUT}/>
+      <path d="M112 458 L124 448 L136 458 M164 458 L176 448 L188 458" stroke="#ff5c8a" stroke-width="5" fill="none" stroke-linecap="round"/>`},
+    {id:"fancy", name:"Elegáns cipő", svg: shoes("#111","#111", `<path d="M108 452 l10 -2 M180 450 l10 2" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>`)},
+  ]},
+  extra:{label:"Extra", view:"10 20 280 380", items:[
+    {id:"none", name:"Semmi"},
+    {id:"chain", name:"Aranylánc", svg:`
+      <path d="M128 232 Q150 280 172 232" stroke="url(#gold)" stroke-width="6" fill="none" stroke-dasharray="6 3"/>
+      <circle cx="150" cy="262" r="9" fill="url(#gold)" ${OUT}/>
+      <text x="150" y="266" font-size="10" text-anchor="middle" font-weight="900" fill="#8a6000" font-family="Arial">$</text>`},
+    {id:"scarf", name:"Sál", svg:`
+      <path d="M112 226 Q150 254 188 226 L192 240 Q150 270 108 240 Z" fill="#e14b4b" ${OUT}/>
+      <path d="M160 244 L176 312 L156 316 L146 250 Z" fill="#e14b4b" ${OUT}/>
+      <path d="M158 300 L176 296 M160 310 L178 306" stroke="#fff" stroke-width="3"/>`},
+    {id:"rose", name:"Rózsa", svg:`
+      <path d="M220 352 Q226 320 236 286" stroke="#2f8f3a" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M228 318 q16 -10 18 4 q-12 6 -18 -4z" fill="#3fae4b" ${OUT}/>
+      <circle cx="238" cy="278" r="16" fill="#e8213f" ${OUT}/>
+      <path d="M230 276 q8 -10 16 0 q-8 8 -16 0z M234 270 q4 8 10 4" stroke="#9e0f26" stroke-width="2.5" fill="none"/>
+      <circle cx="219" cy="342" r="15" fill="${SKIN}" ${OUT}/>`},
+    {id:"balloon", name:"Szív lufi", svg:`
+      <path d="M81 342 Q60 260 52 150" stroke="#888" stroke-width="2" fill="none"/>
+      <path d="M52 152 C2 116 18 56 52 84 C86 56 102 116 52 152 Z" fill="#ff3b6b" ${OUT}/>
+      <path d="M32 92 q6 -10 14 -6" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
+      <circle cx="81" cy="342" r="15" fill="${SKIN}" ${OUT}/>`},
+    {id:"pizza", name:"Pizza", svg:`
+      <path d="M219 342 L262 270 Q236 256 210 262 Z" fill="#ffcf5c" ${OUT}/>
+      <path d="M210 262 Q236 256 262 270 L258 278 Q236 266 213 270 Z" fill="#d68b3a"/>
+      <g fill="#d63b3b"><circle cx="232" cy="290" r="5"/><circle cx="222" cy="310" r="4"/><circle cx="244" cy="282" r="4"/></g>
+      <circle cx="219" cy="342" r="15" fill="${SKIN}" ${OUT}/>`},
+  ]},
+};
+function shoes(col, sole, extra=""){
+  return `
+  <path d="M102 444 L146 444 L148 460 Q148 472 138 472 L98 472 Q88 472 90 462 Q94 450 102 444 Z" fill="${col}" ${OUT}/>
+  <path d="M198 444 L154 444 L152 460 Q152 472 162 472 L202 472 Q212 472 210 462 Q206 450 198 444 Z" fill="${col}" ${OUT}/>
+  <path d="M90 466 L148 466 L148 474 L92 474 Z M152 466 L210 466 L208 474 L152 474 Z" fill="${sole}" ${OUT}/>
+  ${extra}`;
+}
+
+/* Rétegsorrend */
+const ORDER = ["pants","shoes","top","jacket","extra","glasses","hat"];
+const DEFAULT = {hat:"none", glasses:"none", top:"tee", jacket:"puffer", pants:"cargo", shoes:"sneaker", extra:"none"};
+let outfit = {...DEFAULT};
+let current = "top";
+
+function find(cat,id){ return C[cat].items.find(i=>i.id===id) || C[cat].items[0]; }
+function piece(cat){ const it = find(cat,outfit[cat]); return it.svg ? `<g data-cat="${cat}">${it.svg}</g>` : ""; }
+
+function render(changed){
+  const L = document.getElementById("layers");
+  L.innerHTML =
+    bodyBase() + piece("shoes") + piece("pants") +
+    torsoBase() + piece("top") + piece("jacket") + hands() +
+    (["chain","scarf"].includes(outfit.extra) ? piece("extra") : "") +
+    head() + hair() + piece("hat") + piece("glasses") +
+    (["chain","scarf"].includes(outfit.extra) ? "" : piece("extra"));
+  if(changed){
+    const g = L.querySelector(`[data-cat="${changed}"]`);
+    if(g){ g.classList.add("pop"); g.style.transformOrigin="center"; g.style.transformBox="fill-box"; }
+  }
+}
+
+/* ---------- UI ---------- */
+const tabsEl = document.getElementById("tabs"), itemsEl = document.getElementById("items");
+const ghost = () => `<g opacity=".18">${bodyBase()}${torsoBase()}${hands()}${head()}${hair()}</g>`;
+
+function buildTabs(){
+  tabsEl.innerHTML = "";
+  for(const k of Object.keys(C)){
+    const b = document.createElement("button");
+    b.className = "tab" + (k===current ? " on":"");
+    b.textContent = C[k].label;
+    b.onclick = () => { current = k; buildTabs(); buildItems(); };
+    tabsEl.appendChild(b);
+  }
+}
+function buildItems(){
+  itemsEl.innerHTML = "";
+  const cat = C[current];
+  for(const it of cat.items){
+    const b = document.createElement("button");
+    b.className = "item" + (outfit[current]===it.id ? " on":"");
+    b.innerHTML = (it.svg
+      ? `<svg viewBox="${cat.view}">${ghost()}${it.svg}</svg>`
+      : `<div class="none">🚫</div>`) + `<span>${it.name}</span>`;
+    b.onclick = () => { outfit[current] = it.id; render(current); buildItems(); };
+    itemsEl.appendChild(b);
+  }
+  itemsEl.scrollLeft = 0;
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"),1500);
+}
+
+document.getElementById("btnReset").onclick = () => { outfit = {...DEFAULT}; render(); buildItems(); toast("Eredeti szett ✨"); };
+document.getElementById("btnRandom").onclick = () => {
+  for(const k of Object.keys(C)){ const arr = C[k].items; outfit[k] = arr[Math.floor(Math.random()*arr.length)].id; }
+  render(); buildItems(); bounce(); toast("Meglepetés! 🎲");
+};
+document.getElementById("btnSave").onclick = savePNG;
+
+/* ---------- Easter egg: 5 koppintás = Szeretlek ---------- */
+const hero = document.getElementById("hero"), love = document.getElementById("love");
+let taps = 0, tapTimer;
+function bounce(){ hero.classList.remove("tap"); void hero.getBoundingClientRect(); hero.classList.add("tap"); }
+hero.addEventListener("animationend", e => { if(e.animationName==="boing") hero.classList.remove("tap"); });
+hero.addEventListener("click", () => {
+  bounce();
+  taps++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(()=> taps = 0, 1500);
+  if(taps >= 5){ taps = 0; showLove(); }
+});
+function showLove(){
+  love.classList.add("show");
+  if(navigator.vibrate) navigator.vibrate([80,60,80,60,200]);
+  const emojis = ["❤️","💖","💕","💗","💘","😘"];
+  for(let i=0;i<36;i++){
+    const s = document.createElement("span");
+    s.className = "fh";
+    s.textContent = emojis[i % emojis.length];
+    s.style.left = Math.random()*100 + "vw";
+    s.style.fontSize = (18 + Math.random()*34) + "px";
+    s.style.animationDuration = (3 + Math.random()*3) + "s";
+    s.style.animationDelay = (Math.random()*1.5) + "s";
+    love.appendChild(s);
+    setTimeout(()=>s.remove(), 7000);
+  }
+}
+love.addEventListener("click", () => love.classList.remove("show"));
+
+/* ---------- Kép mentése ---------- */
+function savePNG(){
+  const clone = hero.cloneNode(true);
+  clone.setAttribute("width", 900); clone.setAttribute("height", 1500);
+  clone.querySelector(".bob").removeAttribute("class");
+  const xml = new XMLSerializer().serializeToString(clone);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = 900; c.height = 1500;
+    const ctx = c.getContext("2d");
+    const g = ctx.createLinearGradient(0,0,0,1500); g.addColorStop(0,"#ffe3ec"); g.addColorStop(1,"#e3f0ff");
+    ctx.fillStyle = g; ctx.fillRect(0,0,900,1500);
+    ctx.drawImage(img,0,0,900,1500);
+    c.toBlob(async blob => {
+      const file = new File([blob], "szettem.png", {type:"image/png"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:"A szettem"}); return; }catch(e){ if(e.name==="AbortError") return; }
+      }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "szettem.png"; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+      toast("Kép elmentve 📸");
+    }, "image/png");
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+}
+
+render(); buildTabs(); buildItems();
+</script>
+</body>
+</html>
